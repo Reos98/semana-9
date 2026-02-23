@@ -1,17 +1,23 @@
-from flask import Flask
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
-# Ruta Principal para tu Sistema de Turnos
+# 1. RUTA PRINCIPAL (Renderiza index.html)
 @app.route('/')
-def inicio():
-    return "<h1>Bienvenido al Sistema de Turnos - Centro Médico</h1><p>Gestiona tus citas aquí.</p>"
+def index():
+    return render_template('index.html')
 
-# Ruta Dinámica para pacientes
+# 2. RUTA SOBRE NOSOTROS (Renderiza about.html)
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+# 3. RUTA DINÁMICA PARA TURNOS (Renderiza turno.html)
 @app.route('/cita/<paciente>')
 def ver_cita(paciente):
-    return f"Hola {paciente}, tu turno está confirmado."
+    # Pasamos la variable 'paciente' a la plantilla
+    return render_template('turno.html', paciente=paciente)
 
-# ESTO ES LO QUE FALTA: La instrucción para arrancar el servidor
+# 4. EJECUCIÓN DEL SERVIDOR
 if __name__ == '__main__':
     app.run(debug=True)

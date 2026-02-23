@@ -1,0 +1,19 @@
+/* static/styles.css */
+body {
+    background-color: #f4f7f6;
+}
+
+.navbar {
+    border-bottom: 3px solid #007bff;
+}
+
+.card-turno {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+footer {
+    font-size: 0.9rem;
+    color: #6c757d;
+}

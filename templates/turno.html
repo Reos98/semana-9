@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card mx-auto shadow-lg" style="max-width: 400px;">
+    <div class="card-header bg-success text-white text-center">
+        <h4>Turno Confirmado</h4>
+    </div>
+    <div class="card-body text-center">
+        <p class="card-text">Bienvenido, <strong>{{ paciente }}</strong>.</p>
+        <p class="display-1 text-success font-monospace">A-42</p>
+        <p class="text-muted small">Tu reserva está en proceso.</p>
+        <a href="/" class="btn btn-outline-secondary btn-sm">Regresar</a>
+    </div>
+</div>
+{% endblock %}

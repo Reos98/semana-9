@@ -11,11 +11,11 @@ class Paciente:
         self.especialidad = especialidad
         self.fecha = fecha
 
-# --- 2. CONEXIÓN Y CREACIÓN DE TABLA (SQLITE) ---
+# --- 2. CONEXIÓN Y CREACIÓN DE TABLA AUTOMÁTICA ---
 def conectar_db():
     conexion = sqlite3.connect('turnos.db')
     conexion.row_factory = sqlite3.Row
-    # IMPORTANTE: Crear la tabla si no existe para evitar el error 500 en Render
+    # ESTO ES LO QUE ARREGLA EL ERROR EN RENDER:
     cursor = conexion.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS pacientes (
@@ -28,15 +28,15 @@ def conectar_db():
     conexion.commit()
     return conexion
 
-# --- 3. RUTAS (CRUD) ---
+# --- 3. RUTAS ---
 @app.route('/')
 def index():
     db = conectar_db()
-    # READ: Usamos colecciones (lista de objetos)
+    # Leemos de la base de datos (Colecciones)
     pacientes_db = db.execute('SELECT * FROM pacientes').fetchall()
     db.close()
     
-    # Transformamos los datos de la DB en objetos de la clase Paciente
+    # Convertimos a lista de objetos (POO)
     lista_pacientes = [Paciente(p['id'], p['nombre'], p['especialidad'], p['fecha']) for p in pacientes_db]
     
     return render_template('index.html', pacientes=lista_pacientes)
@@ -50,14 +50,6 @@ def nuevo():
     db = conectar_db()
     db.execute('INSERT INTO pacientes (nombre, especialidad, fecha) VALUES (?, ?, ?)',
                (nombre, especialidad, fecha))
-    db.commit()
-    db.close()
-    return redirect(url_for('index'))
-
-@app.route('/eliminar/<int:id>')
-def eliminar(id):
-    db = conectar_db()
-    db.execute('DELETE FROM pacientes WHERE id = ?', (id,))
     db.commit()
     db.close()
     return redirect(url_for('index'))

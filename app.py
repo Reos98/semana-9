@@ -3,7 +3,7 @@ import sqlite3
 
 app = Flask(__name__)
 
-# --- CLASES (POO) ---
+# --- 1. CLASE PACIENTE (POO) ---
 class Paciente:
     def __init__(self, id, nombre, especialidad, fecha):
         self.id = id
@@ -11,52 +11,55 @@ class Paciente:
         self.especialidad = especialidad
         self.fecha = fecha
 
-class GestionTurnos:
-    def __init__(self):
-        self.coleccion_dict = {} # Diccionario para búsqueda rápida por ID
+# --- 2. CONEXIÓN Y CREACIÓN DE TABLA (SQLITE) ---
+def conectar_db():
+    conexion = sqlite3.connect('turnos.db')
+    conexion.row_factory = sqlite3.Row
+    # IMPORTANTE: Crear la tabla si no existe para evitar el error 500 en Render
+    cursor = conexion.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS pacientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            especialidad TEXT NOT NULL,
+            fecha TEXT NOT NULL
+        )
+    ''')
+    conexion.commit()
+    return conexion
 
-    def obtener_todos(self):
-        conexion = sqlite3.connect('turnos.db')
-        cursor = conexion.cursor()
-        cursor.execute("SELECT * FROM pacientes")
-        datos = cursor.fetchall()
-        conexion.close()
-        
-        lista_objetos = []
-        for d in datos:
-            obj = Paciente(d[0], d[1], d[2], d[3])
-            lista_objetos.append(obj)
-            self.coleccion_dict[d[0]] = obj # Sincroniza el diccionario
-        return lista_objetos
-
-# --- RUTAS ---
+# --- 3. RUTAS (CRUD) ---
 @app.route('/')
 def index():
-    gestion = GestionTurnos()
-    lista_pacientes = gestion.obtener_todos()
+    db = conectar_db()
+    # READ: Usamos colecciones (lista de objetos)
+    pacientes_db = db.execute('SELECT * FROM pacientes').fetchall()
+    db.close()
+    
+    # Transformamos los datos de la DB en objetos de la clase Paciente
+    lista_pacientes = [Paciente(p['id'], p['nombre'], p['especialidad'], p['fecha']) for p in pacientes_db]
+    
     return render_template('index.html', pacientes=lista_pacientes)
 
-@app.route('/nuevo_turno', methods=['POST'])
-def nuevo_turno():
+@app.route('/nuevo', methods=['POST'])
+def nuevo():
     nombre = request.form['nombre']
     especialidad = request.form['especialidad']
     fecha = request.form['fecha']
     
-    conexion = sqlite3.connect('turnos.db')
-    cursor = conexion.cursor()
-    cursor.execute("INSERT INTO pacientes (nombre, especialidad, fecha) VALUES (?, ?, ?)", 
-                   (nombre, especialidad, fecha))
-    conexion.commit()
-    conexion.close()
+    db = conectar_db()
+    db.execute('INSERT INTO pacientes (nombre, especialidad, fecha) VALUES (?, ?, ?)',
+               (nombre, especialidad, fecha))
+    db.commit()
+    db.close()
     return redirect(url_for('index'))
 
 @app.route('/eliminar/<int:id>')
 def eliminar(id):
-    conexion = sqlite3.connect('turnos.db')
-    cursor = conexion.cursor()
-    cursor.execute("DELETE FROM pacientes WHERE id = ?", (id,))
-    conexion.commit()
-    conexion.close()
+    db = conectar_db()
+    db.execute('DELETE FROM pacientes WHERE id = ?', (id,))
+    db.commit()
+    db.close()
     return redirect(url_for('index'))
 
 if __name__ == '__main__':

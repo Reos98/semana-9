@@ -1,9 +1,46 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="p-5 mb-4 bg-white border rounded-3 shadow-sm text-center">
-    <h1 class="display-5 fw-bold text-primary">Bienvenido al Sistema de Turnos</h1>
-    <p class="fs-4">Organiza tu atención médica de forma rápida y digital.</p>
-    <a href="/cita/Leo" class="btn btn-primary btn-lg">Obtener mi turno</a>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card p-3 shadow">
+            <h4>Registrar Turno</h4>
+            <form action="/nuevo_turno" method="POST">
+                <input type="text" name="nombre" placeholder="Nombre Paciente" class="form-control mb-2" required>
+                <select name="especialidad" class="form-control mb-2">
+                    <option value="Medicina General">Medicina General</option>
+                    <option value="Odontología">Odontología</option>
+                </select>
+                <input type="date" name="fecha" class="form-control mb-2" required>
+                <button class="btn btn-success w-100">Agendar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <table class="table table-hover bg-white shadow">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Paciente</th>
+                    <th>Especialidad</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pacientes %}
+                <tr>
+                    <td>{{ p.id }}</td>
+                    <td>{{ p.nombre }}</td>
+                    <td>{{ p.especialidad }}</td>
+                    <td>{{ p.fecha }}</td>
+                    <td>
+                        <a href="/eliminar/{{ p.id }}" class="btn btn-danger btn-sm">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

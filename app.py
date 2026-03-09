@@ -87,11 +87,12 @@ def eliminar(id):
         db.session.commit()
     return redirect(url_for('index'))
 
-# RUTA PARA VER PERSISTENCIA TXT
+# RUTA ÚNICA PARA VER DATOS
 @app.route('/datos')
 def ver_datos():
     registros_txt = []
-    ruta_txt = os.path.join(DATA_DIR, "datos.txt")
+    # Usamos la ruta a la carpeta inventario que creaste
+    ruta_txt = os.path.join("inventario/data", "datos.txt")
     if os.path.exists(ruta_txt):
         with open(ruta_txt, "r") as f:
             registros_txt = f.readlines()

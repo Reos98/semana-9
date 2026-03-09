@@ -79,14 +79,19 @@ def eliminar(id):
         db.session.commit()
     return redirect(url_for('index'))
 
-# RUTA ÚNICA PARA VER ARCHIVOS (Sin duplicados)
+# RUTA ÚNICA PARA VER ARCHIVOS (Corregida)
 @app.route('/datos')
 def ver_datos():
     registros_txt = []
     ruta_txt = os.path.join(DATA_DIR, "datos.txt")
+    
+    # Verificamos si el archivo existe antes de leerlo
     if os.path.exists(ruta_txt):
         with open(ruta_txt, "r") as f:
+            # Importante: usar readlines() para obtener una lista
             registros_txt = f.readlines()
+            
+    # El nombre de la variable aquí debe ser igual al que usas en el HTML
     return render_template('datos.html', registros=registros_txt)
 
 if __name__ == '__main__':

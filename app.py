@@ -19,6 +19,35 @@ class Paciente(db.Model):
 with app.app_context():
     db.create_all()
 
+def sincronizar_archivos():
+    # Obtenemos todos los pacientes actuales de la base de datos
+    pacientes = Paciente.query.all()
+    
+    # Definimos la ruta de la carpeta de datos
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    data_dir = os.path.join(base_dir, "inventario", "data")
+    
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    # 1. Sincronizar TXT
+    with open(os.path.join(data_dir, "datos.txt"), "w", encoding='utf-8') as f:
+        for p in pacientes:
+            f.write(f"Paciente: {p.nombre}, Especialidad: {p.especialidad}, Fecha: {p.fecha}\n")
+
+    # 2. Sincronizar JSON
+    import json
+    lista_json = [{"nombre": p.nombre, "especialidad": p.especialidad, "fecha": p.fecha} for p in pacientes]
+    with open(os.path.join(data_dir, "datos.json"), "w", encoding='utf-8') as f:
+        json.dump(lista_json, f, indent=4)
+
+    # 3. Sincronizar CSV
+    import csv
+    with open(os.path.join(data_dir, "datos.csv"), "w", newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Nombre", "Especialidad", "Fecha"]) # Encabezados
+        for p in pacientes:
+            writer.writerow([p.nombre, p.especialidad, p.fecha])
 # RUTAS
 @app.route('/')
 def index():
@@ -30,9 +59,24 @@ def nuevo():
     nombre = request.form.get('nombre')
     especialidad = request.form.get('especialidad')
     fecha = request.form.get('fecha')
+    
     nuevo_p = Paciente(nombre=nombre, especialidad=especialidad, fecha=fecha)
     db.session.add(nuevo_p)
     db.session.commit()
+    
+    # ¡Sincronizamos con los archivos!
+    sincronizar_archivos()
+    return redirect(url_for('index'))
+
+@app.route('/eliminar/<int:id>')
+def eliminar(id):
+    paciente = Paciente.query.get(id)
+    if paciente:
+        db.session.delete(paciente)
+        db.session.commit()
+        
+        # ¡Sincronizamos para que se borre también del TXT!
+        sincronizar_archivos()
     return redirect(url_for('index'))
 
 @app.route('/datos')
@@ -43,7 +87,8 @@ def ver_datos():
     ruta_txt = os.path.join(base_dir, "inventario", "data", "datos.txt")
     
     if os.path.exists(ruta_txt):
-        with open(ruta_txt, "r", encoding='utf-8') as f:
+        print(ruta_txt)
+        with open(ruta_txt, "r", encoding='latin1') as f:
             registros_txt = f.readlines()
     
     return render_template('datos.html', registros=registros_txt)

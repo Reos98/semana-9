@@ -6,36 +6,36 @@ import os
 
 app = Flask(__name__)
 
-# --- 2.3 CONFIGURACIÓN DE SQLALCHEMY ---
-# Creamos una nueva base de datos para la semana 12
+# --- 1. CONFIGURACIÓN DE PERSISTENCIA (SQLAlchemy) ---
+# Se utiliza turnos_v2.db para la persistencia de la Semana 12
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///turnos_v2.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# --- 2.4 MODELO DE DATOS (POO) ---
+# --- 2. MODELO DE DATOS (POO) ---
 class Paciente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     especialidad = db.Column(db.String(100), nullable=False)
     fecha = db.Column(db.String(20), nullable=False)
 
-# Crear la base de datos y las tablas al iniciar
+# Crear la base de datos automáticamente al iniciar
 with app.app_context():
     db.create_all()
 
-# --- 2.2 PERSISTENCIA EN ARCHIVOS LOCALES ---
+# --- 3. PERSISTENCIA EN ARCHIVOS LOCALES ---
 DATA_DIR = "inventario/data"
 
 def guardar_en_archivos(datos):
-    # Asegurar que la carpeta exista
+    # Asegura que la carpeta exista
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
 
-    # 1. Guardar en TXT (Modo append)
+    # A. Guardar en formato TXT
     with open(os.path.join(DATA_DIR, "datos.txt"), "a") as f:
-        f.write(f"Paciente: {datos['nombre']}, Especialidad: {datos['especialidad']}, Fecha: {datos['fecha']}\n")
+        f.write(f"Paciente: {datos['nombre']} | Especialidad: {datos['especialidad']} | Fecha: {datos['fecha']}\n")
 
-    # 2. Guardar en JSON (Corregido para archivos vacíos)
+    # B. Guardar en formato JSON (Manejo de archivos vacíos)
     archivo_json = os.path.join(DATA_DIR, "datos.json")
     lista_json = []
     if os.path.exists(archivo_json) and os.path.getsize(archivo_json) > 0:
@@ -49,32 +49,31 @@ def guardar_en_archivos(datos):
     with open(archivo_json, "w") as f:
         json.dump(lista_json, f, indent=4)
 
-    # 3. Guardar en CSV
+    # C. Guardar en formato CSV
     with open(os.path.join(DATA_DIR, "datos.csv"), "a", newline='') as f:
         writer = csv.writer(f)
         writer.writerow([datos['nombre'], datos['especialidad'], datos['fecha']])
 
-# --- RUTAS DE LA APLICACIÓN ---
+# --- 4. RUTAS DE LA APLICACIÓN ---
 
 @app.route('/')
 def index():
-    # Leer datos desde SQLite usando SQLAlchemy
+    # Leer datos desde SQLite usando el ORM SQLAlchemy
     pacientes = Paciente.query.all()
     return render_template('index.html', pacientes=pacientes)
 
 @app.route('/nuevo', methods=['POST'])
 def nuevo():
-    # Recibir datos del formulario
     nombre = request.form.get('nombre')
     especialidad = request.form.get('especialidad')
     fecha = request.form.get('fecha')
 
-    # Guardar en Base de Datos (SQLAlchemy)
-    nuevo_paciente = Paciente(nombre=nombre, especialidad=especialidad, fecha=fecha)
-    db.session.add(nuevo_paciente)
+    # Guardar en Base de Datos
+    nuevo_p = Paciente(nombre=nombre, especialidad=especialidad, fecha=fecha)
+    db.session.add(nuevo_p)
     db.session.commit()
 
-    # Guardar en Archivos (TXT, JSON, CSV)
+    # Guardar en Archivos Planos
     datos_dict = {'nombre': nombre, 'especialidad': especialidad, 'fecha': fecha}
     guardar_en_archivos(datos_dict)
 
@@ -88,7 +87,7 @@ def eliminar(id):
         db.session.commit()
     return redirect(url_for('index'))
 
-# NUEVA RUTA: Leer y mostrar datos de los archivos
+# RUTA PARA VER PERSISTENCIA TXT
 @app.route('/datos')
 def ver_datos():
     registros_txt = []

@@ -1,46 +1,49 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="row">
-    <div class="col-md-4">
-        <div class="card p-3 shadow">
-            <h4>Registrar Turno</h4>
-            <form action="/nuevo" method="POST">
-                <input type="text" name="nombre" placeholder="Nombre Paciente" class="form-control mb-2" required>
-                <select name="especialidad" class="form-control mb-2">
-                    <option value="Medicina General">Medicina General</option>
-                    <option value="Odontología">Odontología</option>
-                </select>
-                <input type="date" name="fecha" class="form-control mb-2" required>
-                <button class="btn btn-success w-100">Agendar</button>
-            </form>
+<div class="p-5 mb-4 bg-primary text-white rounded-3 shadow">
+    <div class="container-fluid py-5 text-center">
+        <h1 class="display-5 fw-bold">Bienvenido a MedTurnos Leo</h1>
+        <p class="fs-4">Innovación y eficiencia en la gestión de servicios médicos en Quito.</p>
+        <a href="#servicios" class="btn btn-light btn-lg">Conocer más</a>
+    </div>
+</div>
+
+<div class="container my-5" id="servicios">
+    <div class="row text-center">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4">
+                <i class="bi bi-eye text-primary fs-1"></i>
+                <h3 class="mt-3">Nuestra Misión</h3>
+                <p>Facilitar el acceso a la salud mediante un sistema de turnos ágil, eliminando esperas innecesarias y optimizando el tiempo de nuestros pacientes y especialistas.</p>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm p-4">
+                <i class="bi bi-bullseye text-primary fs-1"></i>
+                <h3 class="mt-3">Nuestra Visión</h3>
+                <p>Ser la plataforma líder en gestión médica en el Ecuador, integrando tecnologías de bases de datos relacionales para un control total y seguro de la información.</p>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-8">
-        <table class="table table-hover bg-white shadow">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Paciente</th>
-                    <th>Especialidad</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in pacientes %}
-                <tr>
-                    <td>{{ p.id }}</td>
-                    <td>{{ p.nombre }}</td>
-                    <td>{{ p.especialidad }}</td>
-                    <td>{{ p.fecha }}</td>
-                    <td>
-                        <a href="/eliminar/{{ p.id }}" class="btn btn-danger btn-sm">Eliminar</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="row justify-content-center">
+    <div class="col-md-4 mb-4">
+        <div class="card text-center shadow">
+            <div class="card-body">
+                <h5>Agendar Cita</h5>
+                <a href="/agendar" class="btn btn-outline-primary">Ir ahora</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card text-center shadow border-primary">
+            <div class="card-body">
+                <h5>Gestión de Usuarios</h5>
+                <a href="/usuarios" class="btn btn-primary">Registrar en MySQL</a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,1 +1,6 @@
 Paciente: byron montoya, Especialidad: Odontología, Fecha: 2026-03-28
+Paciente: reo 98, Especialidad: Odontología, Fecha: 2026-03-29
+Paciente: jota, Especialidad: Medicina General, Fecha: 2026-03-26
+Paciente: adios, Especialidad: Medicina General, Fecha: 2026-03-19
+Paciente: MARJORIE, Especialidad: Medicina General, Fecha: 2026-03-29
+Paciente: byron montoya, Especialidad: Pediatría, Fecha: 2026-03-22

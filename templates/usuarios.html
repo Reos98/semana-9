@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Registro de Usuarios</h2>
+    <form action="/nuevo_usuario" method="POST" class="card p-4 shadow">
+        <div class="mb-3">
+            <label>Nombre:</label>
+            <input type="text" name="nombre" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Correo Electrónico:</label>
+            <input type="email" name="mail" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Contraseña:</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar usuario</button>
+        <a href="/" class="btn btn-secondary">Volver</a>
+    </form>
+</div>
+
+<hr>
+<h3>Usuarios Registrados (Desde MariaDB)</h3>
+<table class="table table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for usuario in usuarios %}
+        <tr>
+            <td>{{ usuario.id_usuario }}</td>
+            <td>{{ usuario.nombre }}</td>
+            <td>{{ usuario.mail }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

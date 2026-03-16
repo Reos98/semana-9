@@ -1,15 +1,55 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="card mx-auto shadow-lg" style="max-width: 400px;">
-    <div class="card-header bg-success text-white text-center">
-        <h4>Turno Confirmado</h4>
-    </div>
-    <div class="card-body text-center">
-        <p class="card-text">Bienvenido, <strong>{{ paciente }}</strong>.</p>
-        <p class="display-1 text-success font-monospace">A-42</p>
-        <p class="text-muted small">Tu reserva está en proceso.</p>
-        <a href="/" class="btn btn-outline-secondary btn-sm">Regresar</a>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Agendar Nueva Cita</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form action="/nuevo" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre del Paciente:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" name="nombre" class="form-control" placeholder="Ej. Byron Montoya" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Especialidad Médica:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-stethoscope"></i></span>
+                                <select name="especialidad" class="form-select" required>
+                                    <option value="" selected disabled>Seleccione una opción...</option>
+                                    <option value="Odontología">Odontología</option>
+                                    <option value="Medicina General">Medicina General</option>
+                                    <option value="Pediatría">Pediatría</option>
+                                    <option value="Cardiología">Cardiología</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Fecha de la Cita:</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                                <input type="date" name="fecha" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-plus-circle me-2"></i>Confirmar Agendamiento
+                            </button>
+                            <a href="/" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

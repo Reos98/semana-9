@@ -107,31 +107,47 @@ def pagina_agendar():
 @app.route('/reporte_citas')
 @login_required
 def reporte_citas():
-    # Traemos las citas de SQLite
-    citas_db = Paciente.query.all()
-    
-    # Mapa de médicos por especialidad
-    medicos_especialistas = {
-        "Odontología": "Dr. Ricardo Javier",
-        "Medicina General": "Dra. Valeria Sofía",
-        "Pediatría": "Dr. Andrés Felipe",
-        "Cardiología": "Dra. Marlene Tipán"
-    }
-
-    # Creamos una lista nueva con el nombre del médico incluido
-    citas_completas = []
-    for cita in citas_db:
-        # Buscamos el médico. Si no hay, ponemos 'Por asignar'
-        medico = medicos_especialistas.get(cita.especialidad, "Médico de Turno")
+    try:
+        # 1. Conectamos a Aiven
+        conn = obtener_conexion()
+        # dictionary=True es CLAVE para que coincidan los nombres
+        cursor = conn.cursor(dictionary=True)
         
-        citas_completas.append({
-            "nombre": cita.nombre,
-            "especialidad": cita.especialidad,
-            "fecha": cita.fecha,
-            "medico": medico # <-- Aquí añadimos el nombre del médico
-        })
+        # 2. Traemos los datos EXACTOS como están en tu imagen 202325.png
+        # Ordenamos por id_paciente DESC para que lo nuevo salga primero
+        cursor.execute("SELECT nombre, especialidad, fecha FROM paciente ORDER BY id_paciente DESC")
+        citas_db = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
 
-    return render_template('reporte.html', citas=citas_completas)
+        # 3. Diccionario de Médicos
+        medicos_especialistas = {
+            "Odontología": "Dr. Ricardo Javier",
+            "Medicina General": "Dra. Valeria Sofía",
+            "Pediatría": "Dr. Andrés Felipe",
+            "Cardiología": "Dra. Marlene Tipán"
+        }
+
+        # 4. Procesamos la lista para el HTML
+        citas_para_tabla = []
+        for cita in citas_db:
+            # IMPORTANTE: Usamos los nombres en minúsculas como en la DB
+            especialidad = cita.get('especialidad') or "Medicina General"
+            medico = medicos_especialistas.get(especialidad, "Médico de Turno")
+            
+            citas_para_tabla.append({
+                "nombre": cita['nombre'],
+                "especialidad": especialidad,
+                "fecha": cita.get('fecha') or "Sin fecha",
+                "medico": medico
+            })
+
+        return render_template('reporte.html', citas=citas_para_tabla)
+
+    except Exception as e:
+        print(f"Error en el reporte: {e}")
+        return f"Error al cargar reportes: {e}", 500
 
 @app.route('/usuarios')
 @login_required 

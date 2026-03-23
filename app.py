@@ -214,8 +214,8 @@ def nuevo():
             except:
                 pass # Ignoramos errores de archivos para que la cita se guarde igual
 
-            flash('Cita agendada con éxito en la nube', 'success')
-            return redirect(url_for('index'))
+            flash('Cita agendada con éxito Muchas Gracias...', 'success')
+            return redirect(url_for('reporte_citas'))
             
         except Exception as e:
             print(f"Error base de datos: {e}")

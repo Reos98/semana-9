@@ -179,24 +179,30 @@ def sincronizar_archivos():
 @app.route('/nuevo', methods=['POST'])
 @login_required
 def nuevo():
-    # Recogemos los datos del formulario
     nombre = request.form.get('nombre')
     especialidad = request.form.get('especialidad')
     fecha = request.form.get('fecha')
     
     if nombre and especialidad and fecha:
-        # Guardamos en la base de datos SQLite
-        nuevo_p = Paciente(nombre=nombre, especialidad=especialidad, fecha=fecha)
-        db.session.add(nuevo_p)
-        db.session.commit()
+        # CONEXIÓN A LA NUBE (Aiven)
+        conn = obtener_conexion()
+        cursor = conn.cursor()
         
-        # Ejecutamos la sincronización que acabamos de arreglar
+        # Insertamos en la tabla de la nube (asegúrate de que la tabla 'paciente' exista en Aiven)
+        sql = "INSERT INTO paciente (nombre, especialidad, fecha) VALUES (%s, %s, %s)"
+        cursor.execute(sql, (nombre, especialidad, fecha))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        # (Opcional) Sigues sincronizando archivos planos si el profesor lo pide
         sincronizar_archivos()
         
-        flash('¡Cita agendada correctamente!', 'success')
+        flash('¡Cita guardada permanentemente en la nube!', 'success')
         return redirect(url_for('index'))
     
-    return "Faltan datos en el formulario", 400
+    return "Error al agendar", 400
 
 
 if __name__ == '__main__':

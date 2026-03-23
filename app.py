@@ -144,37 +144,35 @@ def pagina_usuarios():
     conn.close()
     return render_template('usuarios.html', usuarios=datos)
 
-# --- SINCRONIZACIÓN DE ARCHIVOS CORREGIDA ---
 def sincronizar_archivos():
-    # 1. Obtenemos los datos actuales de la base de datos SQLite
-    pacientes = Paciente.query.all()
-    
-    # 2. Definimos las rutas de guardado
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    data_dir = os.path.join(base_dir, "inventario", "data")
-    
-    # Si la carpeta no existe, la creamos
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
+    try:
+        # 1. Obtener datos de la nube
+        conn = obtener_conexion()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT nombre, especialidad, fecha FROM paciente")
+        pacientes = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        # 2. Ruta simplificada: 'data' en la raíz del proyecto
+        data_dir = os.path.join(os.getcwd(), "data")
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir, exist_ok=True)
 
-    # 3. Guardar en TXT
-    with open(os.path.join(data_dir, "datos.txt"), "w", encoding='utf-8') as f:
-        for p in pacientes:
-            f.write(f"Paciente: {p.nombre}, Especialidad: {p.especialidad}, Fecha: {p.fecha}\n")
+        # 3. Guardar archivos (con manejo de errores individual)
+        # TXT
+        with open(os.path.join(data_dir, "datos.txt"), "w", encoding='utf-8') as f:
+            for p in pacientes:
+                f.write(f"Paciente: {p['nombre']}, Especialidad: {p['especialidad']}, Fecha: {p['fecha']}\n")
 
-    # 4. Guardar en JSON
-    import json
-    lista_json = [{"nombre": p.nombre, "especialidad": p.especialidad, "fecha": p.fecha} for p in pacientes]
-    with open(os.path.join(data_dir, "datos.json"), "w", encoding='utf-8') as f:
-        json.dump(lista_json, f, indent=4)
+        # JSON
+        import json
+        with open(os.path.join(data_dir, "datos.json"), "w", encoding='utf-8') as f:
+            json.dump(pacientes, f, indent=4)
 
-    # 5. Guardar en CSV
-    import csv
-    with open(os.path.join(data_dir, "datos.csv"), "w", newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        writer.writerow(["Nombre", "Especialidad", "Fecha"]) # Encabezados
-        for p in pacientes:
-            writer.writerow([p.nombre, p.especialidad, p.fecha])
+    except Exception as e:
+        # Esto imprimirá el error exacto en los LOGS de Render para que lo leamos
+        print(f"DEBUG - Error en sincronización: {str(e)}")
 
 @app.route('/nuevo', methods=['POST'])
 @login_required
@@ -184,25 +182,30 @@ def nuevo():
     fecha = request.form.get('fecha')
     
     if nombre and especialidad and fecha:
-        # CONEXIÓN A LA NUBE (Aiven)
-        conn = obtener_conexion()
-        cursor = conn.cursor()
-        
-        # Insertamos en la tabla de la nube (asegúrate de que la tabla 'paciente' exista en Aiven)
-        sql = "INSERT INTO paciente (nombre, especialidad, fecha) VALUES (%s, %s, %s)"
-        cursor.execute(sql, (nombre, especialidad, fecha))
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        
-        # (Opcional) Sigues sincronizando archivos planos si el profesor lo pide
-        sincronizar_archivos()
-        
-        flash('¡Cita guardada permanentemente en la nube!', 'success')
-        return redirect(url_for('index'))
-    
-    return "Error al agendar", 400
+        try:
+            # PASO A: Guardar en la NUBE (Aiven)
+            conn = obtener_conexion()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO paciente (nombre, especialidad, fecha) VALUES (%s, %s, %s)", 
+                           (nombre, especialidad, fecha))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            # PASO B: Sincronizar (Si esto falla, NO dar error 500)
+            try:
+                sincronizar_archivos()
+            except:
+                pass # Ignoramos errores de archivos para que la cita se guarde igual
+
+            flash('Cita agendada con éxito en la nube', 'success')
+            return redirect(url_for('index'))
+            
+        except Exception as e:
+            print(f"Error base de datos: {e}")
+            return f"Error al conectar con la base de datos de Aiven: {e}", 500
+            
+    return "Faltan datos", 400
 
 
 if __name__ == '__main__':

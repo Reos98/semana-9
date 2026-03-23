@@ -107,14 +107,31 @@ def pagina_agendar():
 @app.route('/reporte_citas')
 @login_required
 def reporte_citas():
-    conn = obtener_conexion()
-    cursor = conn.cursor(dictionary=True)
-    query = "SELECT e.nombres AS Medico, p.nombre AS Paciente, c.fecha AS Fecha_Cita FROM empleado AS e JOIN cita AS c ON e.id_empleado = c.id_empleado JOIN paciente AS p ON c.id_paciente = p.id_paciente"
-    cursor.execute(query)
-    citas = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return render_template('reporte.html', citas=citas)
+    # Traemos las citas de SQLite
+    citas_db = Paciente.query.all()
+    
+    # Mapa de médicos por especialidad
+    medicos_especialistas = {
+        "Odontología": "Dr. Ricardo Javier",
+        "Medicina General": "Dra. Valeria Sofía",
+        "Pediatría": "Dr. Andrés Felipe",
+        "Cardiología": "Dra. Marlene Tipán"
+    }
+
+    # Creamos una lista nueva con el nombre del médico incluido
+    citas_completas = []
+    for cita in citas_db:
+        # Buscamos el médico. Si no hay, ponemos 'Por asignar'
+        medico = medicos_especialistas.get(cita.especialidad, "Médico de Turno")
+        
+        citas_completas.append({
+            "nombre": cita.nombre,
+            "especialidad": cita.especialidad,
+            "fecha": cita.fecha,
+            "medico": medico # <-- Aquí añadimos el nombre del médico
+        })
+
+    return render_template('reporte.html', citas=citas_completas)
 
 @app.route('/usuarios')
 @login_required 
@@ -126,6 +143,60 @@ def pagina_usuarios():
     cursor.close()
     conn.close()
     return render_template('usuarios.html', usuarios=datos)
+
+# --- SINCRONIZACIÓN DE ARCHIVOS CORREGIDA ---
+def sincronizar_archivos():
+    # 1. Obtenemos los datos actuales de la base de datos SQLite
+    pacientes = Paciente.query.all()
+    
+    # 2. Definimos las rutas de guardado
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    data_dir = os.path.join(base_dir, "inventario", "data")
+    
+    # Si la carpeta no existe, la creamos
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    # 3. Guardar en TXT
+    with open(os.path.join(data_dir, "datos.txt"), "w", encoding='utf-8') as f:
+        for p in pacientes:
+            f.write(f"Paciente: {p.nombre}, Especialidad: {p.especialidad}, Fecha: {p.fecha}\n")
+
+    # 4. Guardar en JSON
+    import json
+    lista_json = [{"nombre": p.nombre, "especialidad": p.especialidad, "fecha": p.fecha} for p in pacientes]
+    with open(os.path.join(data_dir, "datos.json"), "w", encoding='utf-8') as f:
+        json.dump(lista_json, f, indent=4)
+
+    # 5. Guardar en CSV
+    import csv
+    with open(os.path.join(data_dir, "datos.csv"), "w", newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Nombre", "Especialidad", "Fecha"]) # Encabezados
+        for p in pacientes:
+            writer.writerow([p.nombre, p.especialidad, p.fecha])
+
+@app.route('/nuevo', methods=['POST'])
+@login_required
+def nuevo():
+    # Recogemos los datos del formulario
+    nombre = request.form.get('nombre')
+    especialidad = request.form.get('especialidad')
+    fecha = request.form.get('fecha')
+    
+    if nombre and especialidad and fecha:
+        # Guardamos en la base de datos SQLite
+        nuevo_p = Paciente(nombre=nombre, especialidad=especialidad, fecha=fecha)
+        db.session.add(nuevo_p)
+        db.session.commit()
+        
+        # Ejecutamos la sincronización que acabamos de arreglar
+        sincronizar_archivos()
+        
+        flash('¡Cita agendada correctamente!', 'success')
+        return redirect(url_for('index'))
+    
+    return "Faltan datos en el formulario", 400
 
 
 if __name__ == '__main__':

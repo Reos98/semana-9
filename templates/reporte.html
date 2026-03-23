@@ -1,30 +1,70 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="container mt-4 text-center">
-    <h2><i class="bi bi-file-earmark-text me-2"></i>Reporte de Citas Médicas</h2>
-    <div class="table-responsive mt-4">
-        <table class="table table-hover table-bordered shadow">
-            <thead class="table-dark">
-                <tr>
-                    <th>Médico</th>
-                    <th>Paciente</th>
-                    <th>Fecha</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cita in citas %}
-                <tr>
-                    <td>{{ cita.Medico }}</td>
-                    <td>{{ cita.Paciente }}</td>
-                    <td>{{ cita.Fecha_Cita }}</td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="3">No hay citas registradas en MariaDB.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <div class="display-4 text-primary mb-2">
+            <i class="bi bi-file-earmark-medical-fill"></i>
+        </div>
+        <h2 class="fw-bold text-dark">Panel de Control: Reporte de Citas</h2>
+        <p class="text-muted">Visualización detallada de especialistas y pacientes asignados</p>
+        <hr class="mx-auto" style="width: 100px; height: 4px; background-color: #0d6efd; border: none;">
+    </div>
+
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th class="ps-4 py-3"><i class="bi bi-person-badge me-2"></i>Médico Asignado</th>
+                            <th class="py-3"><i class="bi bi-person-circle me-2"></i>Paciente</th>
+                            <th class="py-3 text-center"><i class="bi bi-stethoscope me-2"></i>Especialidad</th>
+                            <th class="pe-4 py-3 text-end"><i class="bi bi-calendar3 me-2"></i>Fecha de Cita</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white">
+                        {% for cita in citas %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="fw-bold text-dark">{{ cita.medico }}</span>
+                                <br><small class="text-primary">Especialista Titular</small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-person text-secondary"></i>
+                                    </div>
+                                    <span class="text-capitalize">{{ cita.nombre }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge rounded-pill {% if cita.especialidad == 'Cardiología' %}bg-danger{% elif cita.especialidad == 'Odontología' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} px-3 py-2">
+                                    {{ cita.especialidad }}
+                                </span>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <span class="badge bg-light text-dark border"><i class="bi bi-clock me-1"></i> {{ cita.fecha }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+                                No se encontraron registros de citas en el sistema.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5 mb-5">
+        <a href="/" class="btn btn-outline-primary btn-lg px-5 rounded-pill shadow-sm">
+            <i class="bi bi-house-door me-2"></i>Volver al Panel Principal
+        </a>
     </div>
 </div>
 {% endblock %}

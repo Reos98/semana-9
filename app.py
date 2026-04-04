@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 import os
+import io
 
-# Importamos servicios y modelos (la arquitectura modular requerida)
+# Importamos arquitectura modular
 from models.usuario import Usuario
 from services.usuario_service import cargar_usuario, validar_login, registrar_usuario
 from services.paciente_service import (
@@ -15,44 +16,12 @@ from services.paciente_service import (
     generar_pdf_reporte
 )
 from forms.paciente_form import PacienteForm
-from flask import send_file
-import io
 from conexion.conexion import obtener_conexion
 
-# Ejecutamos inicialización de carpetas si es necesario
+# Inicialización
 os.makedirs('data', exist_ok=True)
-
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_medturnos_leo_modular' 
-
-@app.route('/debug-db')
-def debug_db():
-    res = "<h2>Diagnóstico de Base de Datos</h2>"
-    try:
-        conn = obtener_conexion()
-        cursor = conn.cursor(dictionary=True)
-        
-        # 1. Ver 'cita'
-        cursor.execute("DESCRIBE cita")
-        cita_cols = cursor.fetchall()
-        res += "<h3>Tabla 'cita':</h3><table border='1'><tr><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th></tr>"
-        for col in cita_cols:
-            res += f"<tr><td>{col['Field']}</td><td>{col['Type']}</td><td>{col['Null']}</td><td>{col['Key']}</td><td>{col['Default']}</td><td>{col['Extra']}</td></tr>"
-        res += "</table>"
-        
-        # 2. Intentar fix manual
-        try:
-            cursor.execute("ALTER TABLE cita MODIFY id_cita INT AUTO_INCREMENT")
-            res += "<p style='color:green'>¡ÉXITO: id_cita modificado a AI!</p>"
-            conn.commit()
-        except Exception as e_alt:
-            res += f"<p style='color:red'>ERROR EN ALTER: {e_alt}</p>"
-            
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        res += f"<p style='color:red'>ERROR DE CONEXION: {e}</p>"
-    return res
 
 # --- CONFIGURACIÓN DE FLASK-LOGIN ---
 login_manager = LoginManager()
@@ -61,7 +30,33 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return cargar_usuario(user_id)
+    try:
+        return cargar_usuario(user_id)
+    except:
+        return None
+
+# --- RUTAS DE NAVEGACIÓN ---
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/nosotros')
+def nosotros():
+    return render_template('nosotros.html')
+
+@app.route('/quejas', methods=['GET', 'POST'])
+def quejas():
+    if request.method == 'POST':
+        # Simulación de guardado de sugerencia
+        flash('Gracias por tu sugerencia, la tomaremos en cuenta.', 'info')
+        return redirect(url_for('index'))
+    return render_template('quejas.html')
+
+@app.route('/perfil')
+@login_required
+def perfil():
+    return render_template('perfil.html')
 
 # --- RUTAS DE AUTENTICACIÓN ---
 
@@ -71,15 +66,12 @@ def login():
         email = request.form.get('mail')
         password = request.form.get('password')
         
-        # 1. Intentamos login normal
         user_obj = validar_login(email, password)
         
-        # 2. SISTEMA AUTO-REPARABLE: Si es admin@gmail.com y falló, intentamos crearlo una vez
+        # Sistema Auto-Reparable (Admin)
         if not user_obj and email == 'admin@gmail.com' and password == '123456Byron.':
             try:
-                from services.usuario_service import registrar_usuario
                 registrar_usuario('Administrador Maestro', email, password)
-                # Forzamos privilegio de rol admin en la base de datos
                 conn = obtener_conexion()
                 cursor = conn.cursor()
                 try: cursor.execute("ALTER TABLE usuarios ADD COLUMN rol VARCHAR(20) DEFAULT 'usuario'")
@@ -98,6 +90,7 @@ def login():
         else:
             flash('Correo o contraseña incorrectos', 'danger')
             return redirect(url_for('login'))
+            
     return render_template('login.html')
 
 @app.route('/registro')
@@ -109,7 +102,6 @@ def nuevo_usuario():
     nombre = request.form.get('nombre')
     mail = request.form.get('mail')
     password = request.form.get('password')
-    
     registrar_usuario(nombre, mail, password)
     flash('¡Registro exitoso! Ahora puedes iniciar sesión', 'success')
     return redirect(url_for('login'))
@@ -120,116 +112,74 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# --- RUTAS DEL SISTEMA MÉDICO ---
-
-@app.route('/')
-def index():
-    return render_template('index.html')
+# --- RUTAS DE GESTIÓN MÉDICA ---
 
 @app.route('/agendar')
 @login_required
 def pagina_agendar():
-    # Ahora las vistas de turnos están en su subcarpeta propia
     return render_template('pacientes/turno.html')
 
 @app.route('/reporte_citas')
 @login_required
 def reporte_citas():
     try:
-        # Lógica de privilegios: El admin ve todo, el usuario solo lo suyo
-        es_admin = (current_user.rol == 'admin')
-        citas_para_tabla = obtener_reporte_pacientes(id_usuario=current_user.id, es_admin=es_admin)
-        return render_template('pacientes/reporte.html', citas=citas_para_tabla, es_admin=es_admin)
+        es_admin = (getattr(current_user, 'rol', 'usuario') == 'admin')
+        citas = obtener_reporte_pacientes(id_usuario=current_user.id, es_admin=es_admin)
+        return render_template('pacientes/reporte.html', citas=citas, es_admin=es_admin)
     except Exception as e:
-        print(f"Error en el reporte: {e}")
         return f"Error al cargar reportes: {e}", 500
 
 @app.route('/nuevo', methods=['POST'])
 @login_required
 def nuevo():
-    nombre = request.form.get('nombre')
-    especialidad = request.form.get('especialidad')
-    fecha = request.form.get('fecha')
-    
-    # Usamos la clase de validación del formulario
-    es_valido, mensaje = PacienteForm.validar_datos(nombre, especialidad, fecha)
-    if not es_valido:
-        flash(mensaje, 'danger')
-        return redirect(url_for('pagina_agendar'))
-
     try:
-        # Lógica de guardado en la nube delegada al servicio (usamos 3 tablas relacionadas)
-        agendar_nuevo_paciente(nombre, especialidad, fecha, id_usuario=current_user.id)
-        
-        # Sincronización de archivos (JSON/TXT)
-        try:
-            sincronizar_archivos_data()
-        except:
-            pass 
-
-        flash('Cita agendada con éxito Muchas Gracias...', 'success')
+        agendar_nuevo_paciente(
+            request.form.get('nombre'),
+            request.form.get('especialidad'),
+            request.form.get('fecha'),
+            id_usuario=current_user.id
+        )
+        flash('Cita agendada exitosamente', 'success')
         return redirect(url_for('reporte_citas'))
-            
     except Exception as e:
-        print(f"Error base de datos: {e}")
-        return f"Error al conectar con la base de datos: {e}", 500
+        flash(f'Error al agendar: {e}', 'danger')
+        return redirect(url_for('pagina_agendar'))
 
 @app.route('/editar/<int:id>')
 @login_required
 def editar(id):
     cita = obtener_cita_id(id)
     if not cita:
-        flash("La cita no existe", "danger")
-        return redirect(url_for('reporte_citas'))
-    return render_template('pacientes/editar_turno.html', cita=cita)
+        return "Cita no encontrada", 404
+    # Seguridad: solo el dueño o admin edita
+    if getattr(current_user, 'rol', 'usuario') != 'admin' and cita['id_usuario'] != current_user.id:
+        return "No tienes permiso para editar esta cita", 403
+    return render_template('pacientes/editar.html', cita=cita)
 
 @app.route('/actualizar/<int:id>', methods=['POST'])
 @login_required
 def actualizar(id):
-    especialidad = request.form.get('especialidad')
-    fecha = request.form.get('fecha')
-    
-    try:
-        actualizar_cita(id, especialidad, fecha)
-        flash("Cita actualizada con éxito", "success")
-        return redirect(url_for('reporte_citas'))
-    except Exception as e:
-        flash(f"Error al actualizar: {e}", "danger")
-        return redirect(url_for('reporte_citas'))
+    actualizar_cita(id, request.form.get('nombre'), request.form.get('especialidad'), request.form.get('fecha'))
+    flash('Cita actualizada correctamente', 'success')
+    return redirect(url_for('reporte_citas'))
 
 @app.route('/eliminar/<int:id>')
 @login_required
 def eliminar(id):
-    try:
-        eliminar_cita(id)
-        flash("Cita eliminada correctamente", "success")
-        return redirect(url_for('reporte_citas'))
-    except Exception as e:
-        flash(f"Error al eliminar: {e}", "danger")
-        return redirect(url_for('reporte_citas'))
+    eliminar_cita(id)
+    flash('Cita eliminada correctamente', 'success')
+    return redirect(url_for('reporte_citas'))
 
-@app.route('/descargar_reporte_pdf')
+@app.route('/reporte_pdf')
 @login_required
 def descargar_reporte_pdf():
     try:
-        es_admin = (current_user.rol == 'admin')
+        es_admin = (getattr(current_user, 'rol', 'usuario') == 'admin')
         citas = obtener_reporte_pacientes(id_usuario=current_user.id, es_admin=es_admin)
         pdf_content = generar_pdf_reporte(citas)
-        
-        # Enviamos el PDF como archivo descargable
-        return send_file(
-            io.BytesIO(pdf_content),
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name='reporte_citas_medicas.pdf'
-        )
+        return send_file(io.BytesIO(pdf_content), mimetype='application/pdf', as_attachment=True, download_name='reporte_citas.pdf')
     except Exception as e:
-        flash(f"Error al generar PDF: {e}", "danger")
-        return redirect(url_for('reporte_citas'))
-
-@app.route('/nosotros')
-def nosotros():
-    return render_template('nosotros.html')
+        return f"Error al generar PDF: {e}", 500
 
 @app.route('/quejas', methods=['GET', 'POST'])
 def quejas():

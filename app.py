@@ -71,7 +71,27 @@ def login():
         email = request.form.get('mail')
         password = request.form.get('password')
         
+        # 1. Intentamos login normal
         user_obj = validar_login(email, password)
+        
+        # 2. SISTEMA AUTO-REPARABLE: Si es admin@gmail.com y falló, intentamos crearlo una vez
+        if not user_obj and email == 'admin@gmail.com' and password == '123456Byron.':
+            try:
+                from services.usuario_service import registrar_usuario
+                registrar_usuario('Administrador Maestro', email, password)
+                # Forzamos privilegio de rol admin en la base de datos
+                conn = obtener_conexion()
+                cursor = conn.cursor()
+                try: cursor.execute("ALTER TABLE usuarios ADD COLUMN rol VARCHAR(20) DEFAULT 'usuario'")
+                except: pass
+                cursor.execute("UPDATE usuarios SET rol = 'admin' WHERE mail = %s", (email,))
+                conn.commit()
+                cursor.close()
+                conn.close()
+                user_obj = validar_login(email, password)
+            except:
+                pass
+
         if user_obj:
             login_user(user_obj)
             return redirect(url_for('index'))

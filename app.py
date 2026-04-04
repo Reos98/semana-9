@@ -30,12 +30,6 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return cargar_usuario(user_id)
 
-# --- CONFIGURACIÓN SQLITE ---
-# Mantenemos las bases de datos igual a como estaban
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///turnos_v2.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-
 # --- RUTAS DE AUTENTICACIÓN ---
 
 @app.route('/login', methods=['GET', 'POST'])

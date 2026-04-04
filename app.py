@@ -17,6 +17,26 @@ from services.paciente_service import (
 from forms.paciente_form import PacienteForm
 from flask import send_file
 import io
+from conexion.conexion import obtener_conexion
+
+# Reparación automática de base de datos al iniciar
+def migrar_db():
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        cursor.execute("DESCRIBE cita")
+        columnas = [row[0] for row in cursor.fetchall()]
+        if 'especialidad' not in columnas:
+            cursor.execute("ALTER TABLE cita ADD COLUMN especialidad VARCHAR(100) DEFAULT 'Medicina General'")
+            conn.commit()
+            print("DB MIGRADA: Columna 'especialidad' añadida.")
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"DEBUG: No se pudo migrar BD automáticamente: {e}")
+
+# Ejecutamos migración al importar app
+migrar_db()
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_medturnos_leo_modular' 

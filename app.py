@@ -76,6 +76,9 @@ def migrar_db():
 # Ejecutamos migración al importar app
 migrar_db()
 
+app = Flask(__name__)
+app.secret_key = 'clave_secreta_medturnos_leo_modular' 
+
 @app.route('/debug-db')
 def debug_db():
     res = "<h2>Diagnóstico de Base de Datos</h2>"
@@ -104,9 +107,6 @@ def debug_db():
     except Exception as e:
         res += f"<p style='color:red'>ERROR DE CONEXION: {e}</p>"
     return res
-
-app = Flask(__name__)
-app.secret_key = 'clave_secreta_medturnos_leo_modular' 
 
 # --- CONFIGURACIÓN DE FLASK-LOGIN ---
 login_manager = LoginManager()

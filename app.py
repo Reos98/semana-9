@@ -44,17 +44,28 @@ def migrar_db():
             
         # Asegurar AUTO_INCREMENT en id_cita
         try:
-            cursor.execute("ALTER TABLE cita MODIFY COLUMN id_cita INT AUTO_INCREMENT PRIMARY KEY")
-            print("DB MIGRADA: Auto-incremento en cita activado.")
-        except:
-            pass # Si ya era primary key o auto-increment, ignoramos
+            # Intentamos activar el auto-incremento (asumiendo que ya es PK)
+            cursor.execute("ALTER TABLE cita MODIFY id_cita INT AUTO_INCREMENT")
+            print("DB MIGRADA: AI activado en cita.")
+        except Exception as e:
+            print(f"DEBUG: Intento 2 para cita: {e}")
+            try:
+                # Si falló, intentamos asegurar que sea PK primero y luego AI
+                cursor.execute("ALTER TABLE cita MODIFY id_cita INT NOT NULL")
+                cursor.execute("ALTER TABLE cita MODIFY id_cita INT AUTO_INCREMENT")
+            except:
+                pass
 
         # Asegurar AUTO_INCREMENT en id_paciente
         try:
-            cursor.execute("ALTER TABLE paciente MODIFY COLUMN id_paciente INT AUTO_INCREMENT PRIMARY KEY")
-            print("DB MIGRADA: Auto-incremento en paciente activado.")
-        except:
-            pass
+            cursor.execute("ALTER TABLE paciente MODIFY id_paciente INT AUTO_INCREMENT")
+            print("DB MIGRADA: AI activado en paciente.")
+        except Exception as e:
+            print(f"DEBUG: Intento 2 para paciente: {e}")
+            try:
+                cursor.execute("ALTER TABLE paciente MODIFY id_paciente INT AUTO_INCREMENT")
+            except:
+                pass
 
         conn.commit()
         cursor.close()

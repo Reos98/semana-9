@@ -45,18 +45,7 @@ def index():
 def nosotros():
     return render_template('nosotros.html')
 
-@app.route('/quejas', methods=['GET', 'POST'])
-def quejas():
-    if request.method == 'POST':
-        # Simulación de guardado de sugerencia
-        flash('Gracias por tu sugerencia, la tomaremos en cuenta.', 'info')
-        return redirect(url_for('index'))
-    return render_template('quejas.html')
 
-@app.route('/perfil')
-@login_required
-def perfil():
-    return render_template('perfil.html')
 
 # --- RUTAS DE AUTENTICACIÓN ---
 

@@ -26,10 +26,23 @@ def migrar_db():
         cursor = conn.cursor()
         cursor.execute("DESCRIBE cita")
         columnas = [row[0] for row in cursor.fetchall()]
+        
+        # Asegurar columna 'especialidad'
         if 'especialidad' not in columnas:
             cursor.execute("ALTER TABLE cita ADD COLUMN especialidad VARCHAR(100) DEFAULT 'Medicina General'")
-            conn.commit()
             print("DB MIGRADA: Columna 'especialidad' añadida.")
+        
+        # Asegurar columna 'id_usuario'
+        if 'id_usuario' not in columnas:
+            cursor.execute("ALTER TABLE cita ADD COLUMN id_usuario INT NULL")
+            print("DB MIGRADA: Columna 'id_usuario' añadida.")
+
+        # Asegurar columna 'estado'
+        if 'estado' not in columnas:
+            cursor.execute("ALTER TABLE cita ADD COLUMN estado VARCHAR(50) DEFAULT 'Programada'")
+            print("DB MIGRADA: Columna 'estado' añadida.")
+            
+        conn.commit()
         cursor.close()
         conn.close()
     except Exception as e:

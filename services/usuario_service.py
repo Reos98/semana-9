@@ -9,7 +9,7 @@ def cargar_usuario(user_id):
     cursor.close()
     conn.close()
     if user_data:
-        return Usuario(user_data['id_usuario'], user_data['nombre'], user_data['mail'])
+        return Usuario(user_data['id_usuario'], user_data['nombre'], user_data['mail'], user_data.get('rol', 'usuario'))
     return None
 
 def validar_login(email, password):
@@ -20,7 +20,7 @@ def validar_login(email, password):
     cursor.close()
     conn.close()
     if user_data:
-        return Usuario(user_data['id_usuario'], user_data['nombre'], user_data['mail'])
+        return Usuario(user_data['id_usuario'], user_data['nombre'], user_data['mail'], user_data.get('rol', 'usuario'))
     return None
 
 def registrar_usuario(nombre, mail, password):

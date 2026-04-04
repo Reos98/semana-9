@@ -2,17 +2,29 @@ from conexion.conexion import obtener_conexion
 import os
 import json
 
-def obtener_reporte_pacientes():
+def obtener_reporte_pacientes(id_usuario=None, es_admin=False):
     conn = obtener_conexion()
     cursor = conn.cursor(dictionary=True)
-    # Ahora hacemos un JOIN entre 'cita' y 'paciente' para traer los datos relacionados (3 tablas: cita, paciente y médico-hardcoded)
-    query = """
-        SELECT p.nombre, c.especialidad, c.fecha, c.id_cita 
-        FROM cita c
-        JOIN paciente p ON c.id_paciente = p.id_paciente
-        ORDER BY c.id_cita DESC
-    """
-    cursor.execute(query)
+    
+    # Lógica de filtrado: Si es admin ve todo, si no, solo lo suyo
+    if es_admin:
+        query = """
+            SELECT p.nombre, c.especialidad, c.fecha, c.id_cita 
+            FROM cita c
+            JOIN paciente p ON c.id_paciente = p.id_paciente
+            ORDER BY c.id_cita DESC
+        """
+        cursor.execute(query)
+    else:
+        query = """
+            SELECT p.nombre, c.especialidad, c.fecha, c.id_cita 
+            FROM cita c
+            JOIN paciente p ON c.id_paciente = p.id_paciente
+            WHERE c.id_usuario = %s
+            ORDER BY c.id_cita DESC
+        """
+        cursor.execute(query, (id_usuario,))
+        
     citas_db = cursor.fetchall()
     cursor.close()
     conn.close()

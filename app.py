@@ -116,9 +116,10 @@ def pagina_agendar():
 @login_required
 def reporte_citas():
     try:
-        # Llamamos al servicio para obtener la lógica de negocio
-        citas_para_tabla = obtener_reporte_pacientes()
-        return render_template('pacientes/reporte.html', citas=citas_para_tabla)
+        # Lógica de privilegios: El admin ve todo, el usuario solo lo suyo
+        es_admin = (current_user.rol == 'admin')
+        citas_para_tabla = obtener_reporte_pacientes(id_usuario=current_user.id, es_admin=es_admin)
+        return render_template('pacientes/reporte.html', citas=citas_para_tabla, es_admin=es_admin)
     except Exception as e:
         print(f"Error en el reporte: {e}")
         return f"Error al cargar reportes: {e}", 500
@@ -191,7 +192,8 @@ def eliminar(id):
 @login_required
 def descargar_reporte_pdf():
     try:
-        citas = obtener_reporte_pacientes()
+        es_admin = (current_user.rol == 'admin')
+        citas = obtener_reporte_pacientes(id_usuario=current_user.id, es_admin=es_admin)
         pdf_content = generar_pdf_reporte(citas)
         
         # Enviamos el PDF como archivo descargable

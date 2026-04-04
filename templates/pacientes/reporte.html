@@ -12,6 +12,15 @@
     </div>
 
     <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3">
+            <h4 class="mb-0 text-primary fw-bold text-center">
+                {% if es_admin %}
+                    <i class="bi bi-shield-lock-fill"></i> Todas las Agendas - Modo Maestro
+                {% else %}
+                    <i class="bi bi-person-check-fill"></i> Mis Citas Agendadas
+                {% endif %}
+            </h4>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">

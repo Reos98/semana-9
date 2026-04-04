@@ -42,6 +42,20 @@ def migrar_db():
             cursor.execute("ALTER TABLE cita ADD COLUMN estado VARCHAR(50) DEFAULT 'Programada'")
             print("DB MIGRADA: Columna 'estado' añadida.")
             
+        # Asegurar AUTO_INCREMENT en id_cita
+        try:
+            cursor.execute("ALTER TABLE cita MODIFY COLUMN id_cita INT AUTO_INCREMENT PRIMARY KEY")
+            print("DB MIGRADA: Auto-incremento en cita activado.")
+        except:
+            pass # Si ya era primary key o auto-increment, ignoramos
+
+        # Asegurar AUTO_INCREMENT en id_paciente
+        try:
+            cursor.execute("ALTER TABLE paciente MODIFY COLUMN id_paciente INT AUTO_INCREMENT PRIMARY KEY")
+            print("DB MIGRADA: Auto-incremento en paciente activado.")
+        except:
+            pass
+
         conn.commit()
         cursor.close()
         conn.close()

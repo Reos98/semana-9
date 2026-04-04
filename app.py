@@ -76,6 +76,35 @@ def migrar_db():
 # Ejecutamos migración al importar app
 migrar_db()
 
+@app.route('/debug-db')
+def debug_db():
+    res = "<h2>Diagnóstico de Base de Datos</h2>"
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor(dictionary=True)
+        
+        # 1. Ver 'cita'
+        cursor.execute("DESCRIBE cita")
+        cita_cols = cursor.fetchall()
+        res += "<h3>Tabla 'cita':</h3><table border='1'><tr><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th></tr>"
+        for col in cita_cols:
+            res += f"<tr><td>{col['Field']}</td><td>{col['Type']}</td><td>{col['Null']}</td><td>{col['Key']}</td><td>{col['Default']}</td><td>{col['Extra']}</td></tr>"
+        res += "</table>"
+        
+        # 2. Intentar fix manual
+        try:
+            cursor.execute("ALTER TABLE cita MODIFY id_cita INT AUTO_INCREMENT")
+            res += "<p style='color:green'>¡ÉXITO: id_cita modificado a AI!</p>"
+            conn.commit()
+        except Exception as e_alt:
+            res += f"<p style='color:red'>ERROR EN ALTER: {e_alt}</p>"
+            
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        res += f"<p style='color:red'>ERROR DE CONEXION: {e}</p>"
+    return res
+
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_medturnos_leo_modular' 
 

@@ -19,62 +19,8 @@ from flask import send_file
 import io
 from conexion.conexion import obtener_conexion
 
-# Reparación automática de base de datos al iniciar
-def migrar_db():
-    try:
-        conn = obtener_conexion()
-        cursor = conn.cursor()
-        cursor.execute("DESCRIBE cita")
-        columnas = [row[0] for row in cursor.fetchall()]
-        
-        # Asegurar columna 'especialidad'
-        if 'especialidad' not in columnas:
-            cursor.execute("ALTER TABLE cita ADD COLUMN especialidad VARCHAR(100) DEFAULT 'Medicina General'")
-            print("DB MIGRADA: Columna 'especialidad' añadida.")
-        
-        # Asegurar columna 'id_usuario'
-        if 'id_usuario' not in columnas:
-            cursor.execute("ALTER TABLE cita ADD COLUMN id_usuario INT NULL")
-            print("DB MIGRADA: Columna 'id_usuario' añadida.")
-
-        # Asegurar columna 'estado'
-        if 'estado' not in columnas:
-            cursor.execute("ALTER TABLE cita ADD COLUMN estado VARCHAR(50) DEFAULT 'Programada'")
-            print("DB MIGRADA: Columna 'estado' añadida.")
-            
-        # Asegurar AUTO_INCREMENT en id_cita
-        try:
-            # Intentamos activar el auto-incremento (asumiendo que ya es PK)
-            cursor.execute("ALTER TABLE cita MODIFY id_cita INT AUTO_INCREMENT")
-            print("DB MIGRADA: AI activado en cita.")
-        except Exception as e:
-            print(f"DEBUG: Intento 2 para cita: {e}")
-            try:
-                # Si falló, intentamos asegurar que sea PK primero y luego AI
-                cursor.execute("ALTER TABLE cita MODIFY id_cita INT NOT NULL")
-                cursor.execute("ALTER TABLE cita MODIFY id_cita INT AUTO_INCREMENT")
-            except:
-                pass
-
-        # Asegurar AUTO_INCREMENT en id_paciente
-        try:
-            cursor.execute("ALTER TABLE paciente MODIFY id_paciente INT AUTO_INCREMENT")
-            print("DB MIGRADA: AI activado en paciente.")
-        except Exception as e:
-            print(f"DEBUG: Intento 2 para paciente: {e}")
-            try:
-                cursor.execute("ALTER TABLE paciente MODIFY id_paciente INT AUTO_INCREMENT")
-            except:
-                pass
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print(f"DEBUG: No se pudo migrar BD automáticamente: {e}")
-
-# Ejecutamos migración al importar app
-migrar_db()
+# Ejecutamos inicialización de carpetas si es necesario
+os.makedirs('data', exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_medturnos_leo_modular' 

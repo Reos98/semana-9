@@ -49,15 +49,20 @@ def agendar_nuevo_paciente(nombre, especialidad, fecha, id_usuario=None):
         id_paciente = res[0]
     else:
         # 2. Si no existe, crear el paciente (Tabla 1)
-        cursor.execute("INSERT INTO paciente (nombre) VALUES (%s)", (nombre,))
-        id_paciente = cursor.lastrowid
+        # Calculamos ID manual para evitar errores de auto-incremento en la nube
+        cursor.execute("SELECT COALESCE(MAX(id_paciente), 0) + 1 FROM paciente")
+        nuevo_id_paciente = cursor.fetchone()[0]
+        cursor.execute("INSERT INTO paciente (id_paciente, nombre) VALUES (%s, %s)", (nuevo_id_paciente, nombre))
+        id_paciente = nuevo_id_paciente
         
-    # 3. Crear la cita (Tabla 2) relacionada con el paciente y el usuario (Tabla 3)
-    # Esto cumple con el requisito de 3 tablas relacionadas: Usuarios -> Cita <- Paciente
+    # 3. Crear la cita (Tabla 2) con ID manual para evitar error 1364/1833
+    cursor.execute("SELECT COALESCE(MAX(id_cita), 0) + 1 FROM cita")
+    nuevo_id_cita = cursor.fetchone()[0]
+    
     cursor.execute("""
-        INSERT INTO cita (fecha, especialidad, id_paciente, id_usuario, estado) 
-        VALUES (%s, %s, %s, %s, 'Programada')
-    """, (fecha, especialidad, id_paciente, id_usuario))
+        INSERT INTO cita (id_cita, fecha, especialidad, id_paciente, id_usuario, estado) 
+        VALUES (%s, %s, %s, %s, %s, 'Programada')
+    """, (nuevo_id_cita, fecha, especialidad, id_paciente, id_usuario))
     
     conn.commit()
     cursor.close()

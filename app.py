@@ -106,33 +106,6 @@ def logout():
 def index():
     return render_template('index.html')
 
-@app.route('/instalar-maestro')
-def instalar_maestro():
-    try:
-        conn = obtener_conexion()
-        cursor = conn.cursor()
-        
-        # 1. Asegurar columna rol
-        try:
-            cursor.execute("ALTER TABLE usuarios ADD COLUMN rol VARCHAR(20) DEFAULT 'usuario'")
-        except:
-            pass
-            
-        # 2. Crear/Actualizar Admin
-        cursor.execute("SELECT id_usuario FROM usuarios WHERE mail = %s", ('admin@gmail.com',))
-        if cursor.fetchone():
-            cursor.execute("UPDATE usuarios SET rol = 'admin', password = %s WHERE mail = %s", ('123456Byron.', 'admin@gmail.com'))
-        else:
-            cursor.execute("INSERT INTO usuarios (nombre, mail, password, rol) VALUES (%s, %s, %s, %s)", 
-                         ('Administrador Maestro', 'admin@gmail.com', '123456Byron.', 'admin'))
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
-        return "<h1>¡ÉXITO! Usuario Admin Creado. Ya puedes volver al <a href='/login'>Login</a></h1>"
-    except Exception as e:
-        return f"Error al instalar: {e}"
-
 @app.route('/agendar')
 @login_required
 def pagina_agendar():

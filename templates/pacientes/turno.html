@@ -12,7 +12,7 @@
                 <div class="card-body p-4">
                     <form action="{{ url_for('nuevo') }}" method="POST">
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Nombre del Paciente:</label>
+                            <label class="form-label fw-bold">Nombre del Paciente <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
                                 <input type="text" name="nombre" class="form-control" placeholder="Ej. Byron Montoya" required>
@@ -20,7 +20,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Especialidad Médica:</label>
+                            <label class="form-label fw-bold">Especialidad Médica <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-stethoscope"></i></span>
                                 <select name="especialidad" class="form-select" required>
@@ -34,7 +34,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Fecha de la Cita:</label>
+                            <label class="form-label fw-bold">Fecha de la Cita <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-calendar-event"></i></span>
                                 <input type="date" name="fecha" class="form-control" required>

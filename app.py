@@ -1,67 +1,52 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 import os
-import json
-import csv
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from Conexion.conexion import obtener_conexion 
+
+# Importamos servicios y modelos (la arquitectura modular requerida)
+from models.usuario import Usuario
+from services.usuario_service import cargar_usuario, validar_login, registrar_usuario
+from services.paciente_service import (
+    obtener_reporte_pacientes, 
+    agendar_nuevo_paciente, 
+    sincronizar_archivos_data,
+    obtener_cita_id,
+    actualizar_cita,
+    eliminar_cita,
+    generar_pdf_reporte
+)
+from forms.paciente_form import PacienteForm
+from flask import send_file
+import io
 
 app = Flask(__name__)
-app.secret_key = 'clave_secreta_medturnos_leo' 
+app.secret_key = 'clave_secreta_medturnos_leo_modular' 
 
 # --- CONFIGURACIÓN DE FLASK-LOGIN ---
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-class Usuario(UserMixin):
-    def __init__(self, id, nombre, email):
-        self.id = id
-        self.nombre = nombre
-        self.email = email
-
 @login_manager.user_loader
 def load_user(user_id):
-    conn = obtener_conexion()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuarios WHERE id_usuario = %s", (user_id,))
-    user_data = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    if user_data:
-        return Usuario(user_data['id_usuario'], user_data['nombre'], user_data['mail'])
-    return None
+    return cargar_usuario(user_id)
 
-# --- CONFIGURACIÓN SQLITE (Semana 12) ---
+# --- CONFIGURACIÓN SQLITE ---
+# Mantenemos las bases de datos igual a como estaban
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///turnos_v2.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-class Paciente(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100))
-    especialidad = db.Column(db.String(100))
-    fecha = db.Column(db.String(20))
-
-with app.app_context():
-    db.create_all()
-
-# --- RUTAS DE AUTENTICACIÓN (Semana 14) ---
+# --- RUTAS DE AUTENTICACIÓN ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form.get('mail')
         password = request.form.get('password')
-        conn = obtener_conexion()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuarios WHERE mail = %s AND password = %s", (email, password))
-        user_data = cursor.fetchone()
-        cursor.close()
-        conn.close()
-
-        if user_data:
-            user_obj = Usuario(user_data['id_usuario'], user_data['nombre'], user_data['mail'])
+        
+        user_obj = validar_login(email, password)
+        if user_obj:
             login_user(user_obj)
             return redirect(url_for('index'))
         else:
@@ -78,12 +63,8 @@ def nuevo_usuario():
     nombre = request.form.get('nombre')
     mail = request.form.get('mail')
     password = request.form.get('password')
-    conn = obtener_conexion()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO usuarios (nombre, mail, password) VALUES (%s, %s, %s)", (nombre, mail, password))
-    conn.commit()
-    cursor.close()
-    conn.close()
+    
+    registrar_usuario(nombre, mail, password)
     flash('¡Registro exitoso! Ahora puedes iniciar sesión', 'success')
     return redirect(url_for('login'))
 
@@ -93,7 +74,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# --- RUTAS PROTEGIDAS ---
+# --- RUTAS DEL SISTEMA MÉDICO ---
 
 @app.route('/')
 def index():
@@ -102,93 +83,19 @@ def index():
 @app.route('/agendar')
 @login_required
 def pagina_agendar():
-    return render_template('turno.html')
+    # Ahora las vistas de turnos están en su subcarpeta propia
+    return render_template('pacientes/turno.html')
 
 @app.route('/reporte_citas')
 @login_required
 def reporte_citas():
     try:
-        # 1. Conectamos a Aiven
-        conn = obtener_conexion()
-        # dictionary=True es CLAVE para que coincidan los nombres
-        cursor = conn.cursor(dictionary=True)
-        
-        # 2. Traemos los datos EXACTOS como están en tu imagen 202325.png
-        # Ordenamos por id_paciente DESC para que lo nuevo salga primero
-        cursor.execute("SELECT nombre, especialidad, fecha FROM paciente ORDER BY id_paciente DESC")
-        citas_db = cursor.fetchall()
-        
-        cursor.close()
-        conn.close()
-
-        # 3. Diccionario de Médicos
-        medicos_especialistas = {
-            "Odontología": "Dr. Ricardo Javier",
-            "Medicina General": "Dra. Valeria Sofía",
-            "Pediatría": "Dr. Andrés Felipe",
-            "Cardiología": "Dra. Marlene Tipán"
-        }
-
-        # 4. Procesamos la lista para el HTML
-        citas_para_tabla = []
-        for cita in citas_db:
-            # IMPORTANTE: Usamos los nombres en minúsculas como en la DB
-            especialidad = cita.get('especialidad') or "Medicina General"
-            medico = medicos_especialistas.get(especialidad, "Médico de Turno")
-            
-            citas_para_tabla.append({
-                "nombre": cita['nombre'],
-                "especialidad": especialidad,
-                "fecha": cita.get('fecha') or "Sin fecha",
-                "medico": medico
-            })
-
-        return render_template('reporte.html', citas=citas_para_tabla)
-
+        # Llamamos al servicio para obtener la lógica de negocio
+        citas_para_tabla = obtener_reporte_pacientes()
+        return render_template('pacientes/reporte.html', citas=citas_para_tabla)
     except Exception as e:
         print(f"Error en el reporte: {e}")
         return f"Error al cargar reportes: {e}", 500
-
-@app.route('/usuarios')
-@login_required 
-def pagina_usuarios():
-    conn = obtener_conexion()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM usuarios")
-    datos = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return render_template('usuarios.html', usuarios=datos)
-
-def sincronizar_archivos():
-    try:
-        # 1. Obtener datos de la nube
-        conn = obtener_conexion()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT nombre, especialidad, fecha FROM paciente")
-        pacientes = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        
-        # 2. Ruta simplificada: 'data' en la raíz del proyecto
-        data_dir = os.path.join(os.getcwd(), "data")
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir, exist_ok=True)
-
-        # 3. Guardar archivos (con manejo de errores individual)
-        # TXT
-        with open(os.path.join(data_dir, "datos.txt"), "w", encoding='utf-8') as f:
-            for p in pacientes:
-                f.write(f"Paciente: {p['nombre']}, Especialidad: {p['especialidad']}, Fecha: {p['fecha']}\n")
-
-        # JSON
-        import json
-        with open(os.path.join(data_dir, "datos.json"), "w", encoding='utf-8') as f:
-            json.dump(pacientes, f, indent=4)
-
-    except Exception as e:
-        # Esto imprimirá el error exacto en los LOGS de Render para que lo leamos
-        print(f"DEBUG - Error en sincronización: {str(e)}")
 
 @app.route('/nuevo', methods=['POST'])
 @login_required
@@ -197,31 +104,153 @@ def nuevo():
     especialidad = request.form.get('especialidad')
     fecha = request.form.get('fecha')
     
-    if nombre and especialidad and fecha:
-        try:
-            # PASO A: Guardar en la NUBE (Aiven)
-            conn = obtener_conexion()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO paciente (nombre, especialidad, fecha) VALUES (%s, %s, %s)", 
-                           (nombre, especialidad, fecha))
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            # PASO B: Sincronizar (Si esto falla, NO dar error 500)
-            try:
-                sincronizar_archivos()
-            except:
-                pass # Ignoramos errores de archivos para que la cita se guarde igual
+    # Usamos la clase de validación del formulario
+    es_valido, mensaje = PacienteForm.validar_datos(nombre, especialidad, fecha)
+    if not es_valido:
+        flash(mensaje, 'danger')
+        return redirect(url_for('pagina_agendar'))
 
-            flash('Cita agendada con éxito Muchas Gracias...', 'success')
-            return redirect(url_for('reporte_citas'))
+    try:
+        # Lógica de guardado en la nube delegada al servicio (usamos 3 tablas relacionadas)
+        agendar_nuevo_paciente(nombre, especialidad, fecha, id_usuario=current_user.id)
+        
+        # Sincronización de archivos (JSON/TXT)
+        try:
+            sincronizar_archivos_data()
+        except:
+            pass 
+
+        flash('Cita agendada con éxito Muchas Gracias...', 'success')
+        return redirect(url_for('reporte_citas'))
             
-        except Exception as e:
-            print(f"Error base de datos: {e}")
-            return f"Error al conectar con la base de datos de Aiven: {e}", 500
+    except Exception as e:
+        print(f"Error base de datos: {e}")
+        return f"Error al conectar con la base de datos: {e}", 500
+
+@app.route('/editar/<int:id>')
+@login_required
+def editar(id):
+    cita = obtener_cita_id(id)
+    if not cita:
+        flash("La cita no existe", "danger")
+        return redirect(url_for('reporte_citas'))
+    return render_template('pacientes/editar_turno.html', cita=cita)
+
+@app.route('/actualizar/<int:id>', methods=['POST'])
+@login_required
+def actualizar(id):
+    especialidad = request.form.get('especialidad')
+    fecha = request.form.get('fecha')
+    
+    try:
+        actualizar_cita(id, especialidad, fecha)
+        flash("Cita actualizada con éxito", "success")
+        return redirect(url_for('reporte_citas'))
+    except Exception as e:
+        flash(f"Error al actualizar: {e}", "danger")
+        return redirect(url_for('reporte_citas'))
+
+@app.route('/eliminar/<int:id>')
+@login_required
+def eliminar(id):
+    try:
+        eliminar_cita(id)
+        flash("Cita eliminada correctamente", "success")
+        return redirect(url_for('reporte_citas'))
+    except Exception as e:
+        flash(f"Error al eliminar: {e}", "danger")
+        return redirect(url_for('reporte_citas'))
+
+@app.route('/descargar_reporte_pdf')
+@login_required
+def descargar_reporte_pdf():
+    try:
+        citas = obtener_reporte_pacientes()
+        pdf_content = generar_pdf_reporte(citas)
+        
+        # Enviamos el PDF como archivo descargable
+        return send_file(
+            io.BytesIO(pdf_content),
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='reporte_citas_medicas.pdf'
+        )
+    except Exception as e:
+        flash(f"Error al generar PDF: {e}", "danger")
+        return redirect(url_for('reporte_citas'))
+
+@app.route('/nosotros')
+def nosotros():
+    return render_template('nosotros.html')
+
+@app.route('/quejas', methods=['GET', 'POST'])
+def quejas():
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        mail = request.form.get('mail')
+        mensaje = request.form.get('mensaje')
+        
+        if not nombre or not mail or not mensaje:
+            flash("Todos los campos son obligatorios para enviar tu mensaje", "danger")
+            return redirect(url_for('quejas'))
             
-    return "Faltan datos", 400
+        # Guardamos en un archivo de feedback
+        import json
+        from datetime import datetime
+        feedback_file = 'data/feedback.json'
+        # Aseguramos que la carpeta data existe
+        os.makedirs('data', exist_ok=True)
+        
+        comentario = {
+            "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "nombre": nombre,
+            "mail": mail,
+            "mensaje": mensaje
+        }
+        
+        datos = []
+        if os.path.exists(feedback_file):
+            with open(feedback_file, 'r', encoding='utf-8') as f:
+                try:
+                    datos = json.load(f)
+                except:
+                    datos = []
+        
+        datos.append(comentario)
+        with open(feedback_file, 'w', encoding='utf-8') as f:
+            json.dump(datos, f, indent=4)
+            
+        flash("¡Gracias por tu mensaje! Tu opinión es muy importante para nosotros", "success")
+        return redirect(url_for('index'))
+        
+    return render_template('quejas.html')
+
+@app.route('/usuarios')
+@login_required 
+def pagina_usuarios():
+    # Acceso simple para ver usuarios registrados
+    from conexion.conexion import obtener_conexion
+    conn = obtener_conexion()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM usuarios")
+    datos = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('usuarios.html', usuarios=datos)
+
+@app.route('/perfil', methods=['GET', 'POST'])
+@login_required
+def perfil():
+    from services.usuario_service import actualizar_datos_usuario
+    if request.method == 'POST':
+        nuevo_nombre = request.form.get('nombre')
+        nueva_pass = request.form.get('password')
+        
+        if actualizar_datos_usuario(current_user.id, nuevo_nombre, nueva_pass if nueva_pass else None):
+            flash("Perfil actualizado correctamente. Los cambios se verán reflejados en tu próxima sesión.", "success")
+            return redirect(url_for('index'))
+            
+    return render_template('perfil.html')
 
 
 if __name__ == '__main__':

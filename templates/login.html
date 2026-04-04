@@ -17,14 +17,16 @@
                     {% endwith %}
                     <form action="/login" method="POST">
                         <div class="mb-4">
-                            <label class="fw-bold">Correo Electrónico</label>
-                            <input type="email" name="mail" class="form-control" required>
+                            <label class="fw-bold mb-2">Correo Electrónico <span class="text-danger">*</span></label>
+                            <input type="email" name="mail" class="form-control" placeholder="nombre@mail.com" required>
                         </div>
                         <div class="mb-4">
-                            <label class="fw-bold">Contraseña</label>
-                            <input type="password" name="password" class="form-control" required>
+                            <label class="fw-bold mb-2">Contraseña <span class="text-danger">*</span></label>
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 btn-lg">Entrar</button>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg shadow-sm">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Entrar al Sistema
+                        </button>
                     </form>
                 </div>
                 <div class="card-footer text-center bg-light">

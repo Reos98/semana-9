@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <!-- Header -->
+        <div class="text-center py-5">
+            <h1 class="display-4 fw-bold text-primary mb-3">Nuestra Misión y Visión</h1>
+            <p class="lead text-muted">Comprometidos con la excelencia en salud desde 2024.</p>
+            <hr class="mx-auto" style="width: 100px; height: 4px; background-color: #0d6efd; border: none;">
+        </div>
+
+        <!-- Misión y Visión -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                    <div class="display-4 text-primary mb-3"><i class="bi bi-eye-fill"></i></div>
+                    <h3 class="fw-bold">Nuestra Misión</h3>
+                    <p class="text-muted fs-5">Brindar una experiencia médica ágil, eliminando las barreras de tiempo y espacio mediante el uso inteligente de la tecnología.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                    <div class="display-4 text-primary mb-3"><i class="bi bi-graph-up-arrow"></i></div>
+                    <h3 class="fw-bold">Nuestra Visión</h3>
+                    <p class="text-muted fs-5">Ser el referente nacional en transformación digital de la salud, integrando sistemas relacionales robustos.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contacto Section -->
+        <div class="card border-0 shadow-lg p-4 p-md-5 rounded-4 bg-white mb-5">
+            <div class="row align-items-center">
+                <div class="col-md-6 border-end pe-md-5">
+                    <h2 class="fw-bold text-dark mb-4"><i class="bi bi-geo-alt-fill me-2 text-danger"></i>¿Dónde Estamos?</h2>
+                    <p class="text-muted mb-4">Visítanos en nuestra sede principal de Quito. Aquí tienes nuestra ubicación exacta:</p>
+                    <div class="bg-light p-4 rounded-4 border border-primary-subtle">
+                        <p class="mb-2 fw-bold text-primary">Dirección:</p>
+                        <p class="text-dark mb-3">Av. Amazonas y Naciones Unidas, Edificio Health Center, Quito - Ecuador.</p>
+                        <p class="mb-2 fw-bold text-success">Contacto:</p>
+                        <p class="text-dark mb-0">byrondark36@gmail.com</p>
+                        <p class="text-dark mb-0">+593 98 765 4321</p>
+                    </div>
+                </div>
+                <div class="col-md-6 ps-md-5 mt-4 mt-md-0">
+                    <div class="rounded-4 overflow-hidden border shadow-lg h-100">
+                        <!-- Mapa real enviado por el usuario con el punto rojo -->
+                        <img src="{{ url_for('static', filename='img/mapa_real_final.png') }}" alt="Ubicación de la Clínica" class="img-fluid w-100" style="object-fit: cover; min-height: 350px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4 mb-5">
+            <a href="/" class="btn btn-outline-primary px-5 rounded-pill"><i class="bi bi-arrow-left me-2"></i>Volver al Inicio</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-lg border-0 rounded-4">
+            <div class="card-header bg-warning text-dark py-3 text-center rounded-top-4">
+                <h3 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Editar Cita Médica</h3>
+            </div>
+            <div class="card-body p-4">
+                <form action="{{ url_for('actualizar', id=cita.id_cita) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre del Paciente</label>
+                        <input type="text" class="form-control bg-light" value="{{ cita.nombre }}" readonly disabled>
+                        <div class="form-text">El nombre no se puede editar. Si es un error, por favor elimine la cita y cree una nueva.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="especialidad" class="form-label fw-bold">Especialidad</label>
+                        <select class="form-select" id="especialidad" name="especialidad" required>
+                            <option value="Odontología" {% if cita.especialidad == 'Odontología' %}selected{% endif %}>Odontología</option>
+                            <option value="Medicina General" {% if cita.especialidad == 'Medicina General' %}selected{% endif %}>Medicina General</option>
+                            <option value="Pediatría" {% if cita.especialidad == 'Pediatría' %}selected{% endif %}>Pediatría</option>
+                            <option value="Cardiología" {% if cita.especialidad == 'Cardiología' %}selected{% endif %}>Cardiología</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="fecha" class="form-label fw-bold">Nueva Fecha de Cita</label>
+                        <input type="date" class="form-control" id="fecha" name="fecha" value="{{ cita.fecha }}" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning btn-lg shadow-sm">
+                            <i class="bi bi-save me-2"></i>Guardar Cambios
+                        </button>
+                        <a href="/reporte_citas" class="btn btn-outline-secondary">
+                            Cancelar y Volver
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

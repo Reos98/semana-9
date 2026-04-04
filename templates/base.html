@@ -6,12 +6,7 @@
     <title>MedTurnos Leo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        /* Un pequeño toque para que los mensajes no queden pegados al navbar */
-        .flashed-messages {
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body class="d-flex flex-column min-vh-100 bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
@@ -23,49 +18,147 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-nav ms-auto align-items-center">
                     <a class="nav-link" href="/">Inicio</a>
+                    <a class="nav-link" href="/nosotros">Nosotros</a>
+                    <a class="nav-link" href="/quejas">Sugerencias</a>
                     {% if current_user.is_authenticated %}
                         <a class="nav-link" href="/agendar">Agendar Cita</a>
                         <a class="nav-link" href="/reporte_citas">Reportes</a>
-                        <div class="ms-lg-3 d-flex align-items-center border-start ps-lg-3">
-                            <span class="navbar-text me-3 text-info fw-bold">{{ current_user.nombre }}</span>
-                            <a class="btn btn-outline-danger btn-sm" href="/logout">Salir</a>
+                        <div class="dropdown ms-lg-3">
+                            <button class="btn btn-outline-info dropdown-toggle fw-bold" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle me-1"></i> {{ current_user.nombre }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="userMenu">
+                                <li><a class="dropdown-item py-2" href="/perfil"><i class="bi bi-gear me-2"></i>Mi Perfil</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item py-2 text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
+                            </ul>
                         </div>
                     {% else %}
-                        <a class="btn btn-primary btn-sm px-4" href="/login">Iniciar Sesión</a>
+                        <a class="btn btn-primary ms-lg-3 px-4 rounded-pill shadow-sm" href="/login">Acceder</a>
                     {% endif %}
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="container flashed-messages">
+    <!-- Main Content -->
+    <main class="container py-4 flex-grow-1">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show shadow-sm" role="alert">
-                {% if category == 'success' %}
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                {% elif category == 'danger' or category == 'error' %}
-                    <i class="bi bi-exclamation-octagon-fill me-2"></i>
-                {% else %}
-                    <i class="bi bi-info-circle-fill me-2"></i>
-                {% endif %}
-                {{ message }}
+              <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-info-circle me-2"></i> {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
               </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
-    </div>
-
-    <main class="container mt-4 flex-grow-1">
+        
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="text-center mt-auto py-4 border-top bg-white small text-muted">
-        © 2026 Sistema de Turnos - Byron Montoya
+    <footer class="py-4 border-top bg-white mt-auto">
+        <div class="container text-center">
+            <p class="text-muted mb-0 small">© 2026 Sistema de Turnos MedTurnos Leo - Byron Montoya</p>
+        </div>
     </footer>
 
+    <!-- Floating Chat Widget -->
+    <div id="chat-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+        <div id="chat-window" class="card shadow-lg border-0 d-none mb-3" style="width: 320px; border-radius: 1rem; overflow: hidden;">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-white rounded-circle p-1 me-2" style="width: 35px; height: 35px;">
+                        <img src="https://ui-avatars.com/api/?name=Leo+Asistente&background=0d6efd&color=fff" class="img-fluid rounded-circle" alt="Asistente">
+                    </div>
+                    <span class="fw-bold">Asistente Leo</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white shadow-none" id="close-chat"></button>
+            </div>
+            <div class="card-body" id="chat-body" style="height: 350px; overflow-y: auto; background-color: #f8f9fa;">
+                <div class="chat-message bot mb-3">
+                    <div class="bg-white p-2 rounded-3 shadow-sm d-inline-block small border">
+                        ¡Hola! Soy Leo, tu asistente virtual. ¿En qué puedo ayudarte hoy?
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top p-2">
+                <div class="input-group">
+                    <input type="text" id="chat-input" class="form-control border-0 bg-light rounded-pill px-3" placeholder="Escribe tu duda...">
+                    <button class="btn btn-primary rounded-circle ms-1 p-2" id="send-chat" style="width: 40px; height: 40px;">
+                        <i class="bi bi-send-fill text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button id="chat-trigger" class="btn btn-primary rounded-circle shadow-lg p-0 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border: 4px solid white;">
+            <i class="bi bi-chat-dots-fill fs-3 text-white"></i>
+        </button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Lógica del Chatbot
+        const chatTrigger = document.getElementById('chat-trigger');
+        const chatWindow = document.getElementById('chat-window');
+        const closeChat = document.getElementById('close-chat');
+        const sendBtn = document.getElementById('send-chat');
+        const chatInput = document.getElementById('chat-input');
+        const chatBody = document.getElementById('chat-body');
+
+        chatTrigger.addEventListener('click', () => {
+            chatWindow.classList.toggle('d-none');
+        });
+
+        closeChat.addEventListener('click', () => {
+            chatWindow.classList.add('d-none');
+        });
+
+        function appendMessage(text, type) {
+            const div = document.createElement('div');
+            div.className = `chat-message ${type} mb-3 ${type === 'user' ? 'text-end' : ''}`;
+            div.innerHTML = `
+                <div class="${type === 'user' ? 'bg-primary text-white' : 'bg-white border'} p-2 rounded-3 shadow-sm d-inline-block small">
+                    ${text}
+                </div>
+            `;
+            chatBody.appendChild(div);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        function botResponse(input) {
+            const msg = input.toLowerCase();
+            let response = "Lo siento, no entiendo tu pregunta. ¿Puedes intentar con 'horarios', 'ubicación' o 'especialidades'?";
+            
+            if (msg.includes('hola') || msg.includes('buenos')) {
+                response = "¡Hola! Soy Leo. ¿En qué puedo ayudarte hoy?";
+            } else if (msg.includes('horario')) {
+                response = "Atendemos de Lunes a Viernes de 8:00 AM a 6:00 PM y Sábados de 9:00 AM a 1:00 PM.";
+            } else if (msg.includes('ubicación') || msg.includes('donde') || msg.includes('dónde')) {
+                response = "Estamos ubicados en la Av. Amazonas y Naciones Unidas, Edificio Health Center, Piso 4, Quito.";
+            } else if (msg.includes('especialidad') || msg.includes('servicios') || msg.includes('atencion')) {
+                response = "Ofrecemos servicios de Cardiología, Odontología, Pediatría y Medicina General.";
+            } else if (msg.includes('cita') || msg.includes('turno') || msg.includes('agendar')) {
+                response = "Para agendar una cita, debes iniciar sesión e ir a la sección 'Agendar Cita' en el menú superior.";
+            }
+
+            setTimeout(() => {
+                appendMessage(response, 'bot');
+            }, 600);
+        }
+
+        sendBtn.addEventListener('click', () => {
+            const text = chatInput.value.trim();
+            if (text) {
+                appendMessage(text, 'user');
+                chatInput.value = '';
+                botResponse(text);
+            }
+        });
+
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendBtn.click();
+        });
+    </script>
 </body>
 </html>

@@ -10,18 +10,20 @@
                 <div class="card-body p-5">
                     <form action="/nuevo_usuario" method="POST">
                         <div class="mb-3">
-                            <label class="fw-bold">Nombre Completo</label>
-                            <input type="text" name="nombre" class="form-control" required>
+                            <label class="fw-bold mb-2">Nombre Completo <span class="text-danger">*</span></label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Byron Montoya" required>
                         </div>
                         <div class="mb-3">
-                            <label class="fw-bold">Correo Electrónico</label>
-                            <input type="email" name="mail" class="form-control" required>
+                            <label class="fw-bold mb-2">Correo Electrónico <span class="text-danger">*</span></label>
+                            <input type="email" name="mail" class="form-control" placeholder="ejemplo@mail.com" required>
                         </div>
                         <div class="mb-3">
-                            <label class="fw-bold">Contraseña</label>
-                            <input type="password" name="password" class="form-control" required>
+                            <label class="fw-bold mb-2">Contraseña <span class="text-danger">*</span></label>
+                            <input type="password" name="password" class="form-control" placeholder="Mínimo 6 caracteres" required>
                         </div>
-                        <button type="submit" class="btn btn-success w-100 btn-lg mt-3">Registrarme</button>
+                        <button type="submit" class="btn btn-success w-100 btn-lg mt-3 shadow-sm">
+                            <i class="bi bi-person-plus-fill me-2"></i>Crear Cuenta
+                        </button>
                     </form>
                 </div>
             </div>

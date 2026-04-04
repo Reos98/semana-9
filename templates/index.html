@@ -1,49 +1,95 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="p-5 mb-4 bg-primary text-white rounded-3 shadow">
-    <div class="container-fluid py-5 text-center">
+<div class="row bg-primary text-white text-center py-5 rounded-4 shadow mb-4">
+    <div class="col-12 py-5">
         <h1 class="display-5 fw-bold">Bienvenido a MedTurnos Leo</h1>
         <p class="fs-4">Innovación y eficiencia en la gestión de servicios médicos en Quito.</p>
-        <a href="#servicios" class="btn btn-light btn-lg">Conocer más</a>
     </div>
 </div>
 
-<div class="container my-5" id="servicios">
-    <div class="row text-center">
-        <div class="col-md-6 mb-4">
-            <div class="card h-100 border-0 shadow-sm p-4">
-                <i class="bi bi-eye text-primary fs-1"></i>
-                <h3 class="mt-3">Nuestra Misión</h3>
-                <p>Facilitar el acceso a la salud mediante un sistema de turnos ágil, eliminando esperas innecesarias y optimizando el tiempo de nuestros pacientes y especialistas.</p>
+<div class="row min-vh-75 align-items-center g-0 bg-white rounded-5 shadow-lg overflow-hidden border mb-5 mt-4">
+    <!-- Texto Hero -->
+    <div class="col-lg-7 p-5">
+        <div class="pe-lg-5">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill mb-4 fw-600">
+                <i class="bi bi-shield-plus me-1"></i> Innovación Médica en Quito
+            </span>
+            <h1 class="display-4 fw-bold text-dark mb-4">Tu Salud es Nuestra <br><span class="text-primary text-gradient">Prioridad</span></h1>
+            <p class="lead text-muted mb-5 fs-5">Brindamos atención personalizada con los mejores especialistas y tecnología de vanguardia para tu bienestar.</p>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="/agendar" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
+                    <i class="bi bi-calendar-plus me-2"></i>Agendar Cita
+                </a>
+                <a href="/nosotros" class="btn btn-outline-dark btn-lg px-5 py-3">
+                    Conocer más
+                </a>
             </div>
         </div>
-        <div class="col-md-6 mb-4">
-            <div class="card h-100 border-0 shadow-sm p-4">
-                <i class="bi bi-bullseye text-primary fs-1"></i>
-                <h3 class="mt-3">Nuestra Visión</h3>
-                <p>Ser la plataforma líder en gestión médica en el Ecuador, integrando tecnologías de bases de datos relacionales para un control total y seguro de la información.</p>
-            </div>
+    </div>
+    <!-- Imagen Hero -->
+    <div class="col-lg-5 d-none d-lg-block">
+        <div class="h-100 d-flex align-items-center justify-content-center p-3">
+            <img src="{{ url_for('static', filename='img/clinica_final_hero.png') }}" 
+                 alt="Nuestra Clínica Moderna" 
+                 class="img-fluid rounded-4 shadow-lg" 
+                 style="max-height: 550px; width: auto; object-fit: contain;">
         </div>
     </div>
 </div>
 
-<div class="row justify-content-center">
+<!-- Servicios simplificados -->
+<div class="row text-center mb-5 mt-5">
     <div class="col-md-4 mb-4">
-        <div class="card text-center shadow">
-            <div class="card-body">
-                <h5>Agendar Cita</h5>
-                <a href="/agendar" class="btn btn-outline-primary">Ir ahora</a>
+        <div class="p-4 card h-100 border-0 bg-white shadow-sm hover-up">
+            <div class="icon-circle bg-primary-subtle text-primary mx-auto mb-3">
+                <i class="bi bi-heart-pulse-fill fs-2"></i>
             </div>
+            <h5 class="fw-bold">Cardiología</h5>
+            <p class="small text-muted">Diagnósticos precisos para el motor de tu vida.</p>
         </div>
     </div>
     <div class="col-md-4 mb-4">
-        <div class="card text-center shadow border-primary">
-            <div class="card-body">
-                <h5>Gestión de Usuarios</h5>
-                <a href="/usuarios" class="btn btn-primary">Ver Usuarios</a>
+        <div class="p-4 card h-100 border-0 bg-white shadow-sm hover-up">
+            <div class="icon-circle bg-info-subtle text-info mx-auto mb-3">
+                <i class="bi bi-stars fs-2"></i>
             </div>
+            <h5 class="fw-bold">Odontología</h5>
+            <p class="small text-muted">Vuelve a sonreír con nuestra estética dental.</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="p-4 card h-100 border-0 bg-white shadow-sm hover-up">
+            <div class="icon-circle bg-success-subtle text-success mx-auto mb-3">
+                <i class="bi bi-people-fill fs-2"></i>
+            </div>
+            <h5 class="fw-bold">Pediatría</h5>
+            <p class="small text-muted">Cuidado integral para los más pequeños.</p>
         </div>
     </div>
 </div>
+
+<style>
+    .icon-circle {
+        width: 70px;
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+    .hover-up:hover {
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+    }
+    .text-gradient {
+        background: linear-gradient(90deg, #0d6efd, #0dcaf0);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .bg-gradient-dark {
+        background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    }
+</style>
 {% endblock %}

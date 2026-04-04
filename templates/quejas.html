@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 shadow-lg p-4 rounded-4 bg-white">
+            <div class="text-center mb-5">
+                <div class="display-3 text-danger mb-3"><i class="bi bi-chat-left-dots-fill"></i></div>
+                <h1 class="fw-bold text-dark mb-2">Buzón de Sugerencias</h1>
+                <p class="text-muted">Tu opinión nos ayuda a mejorar cada día. Cuéntanos tu experiencia o déjanos una sugerencia/queja.</p>
+                <hr class="mx-auto" style="width: 80px; height: 3px; background-color: #dc3545; border: none;">
+            </div>
+
+            <form action="{{ url_for('quejas') }}" method="POST">
+                <div class="mb-3">
+                    <label for="nombre" class="form-label fw-bold">Nombre Completo <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ej: Juan Pérez" required>
+                    </div>
+                    <div class="form-text">Campo obligatorio.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="mail" class="form-label fw-bold">Correo Electrónico <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control" id="mail" name="mail" placeholder="ejemplo@correo.com" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="mensaje" class="form-label fw-bold">Mensaje / Sugerencia / Queja <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="mensaje" name="mensaje" rows="5" placeholder="Escribe aquí tus comentarios detalladamente..." required></textarea>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-danger btn-lg shadow-sm">
+                        <i class="bi bi-send-fill me-2"></i>Enviar Mensaje
+                    </button>
+                    <a href="/" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+        <div class="text-center mt-4 text-muted small">
+            <p><i class="bi bi-shield-check me-1"></i> Tus datos están protegidos y serán tratados de forma confidencial.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
